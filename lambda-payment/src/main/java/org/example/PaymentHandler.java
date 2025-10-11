@@ -2,10 +2,10 @@ package org.example;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
+import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
@@ -14,9 +14,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class PaymentHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
@@ -76,12 +74,21 @@ public class PaymentHandler implements RequestHandler<APIGatewayProxyRequestEven
 
     private String getUserIdFromCardId(String cardId) {
         Table table = dynamoDB.getTable(cardTableName);
-        GetItemSpec spec = new GetItemSpec().withPrimaryKey("uuid", cardId);
 
-        Item item = table.getItem(spec);
-        if (item == null) {
+        QuerySpec querySpec = new QuerySpec()
+                .withKeyConditionExpression("#u = :v_id")
+                .withNameMap(new NameMap().with("#u", "uuid"))
+                .withValueMap(new ValueMap().withString(":v_id", cardId))
+                .withMaxResultSize(1);
+
+        ItemCollection<QueryOutcome> items = table.query(querySpec);
+        Iterator<Item> iterator = items.iterator();
+
+        if (!iterator.hasNext()) {
             return null;
         }
+
+        Item item = iterator.next();
         return item.getString("userId");
     }
 }
