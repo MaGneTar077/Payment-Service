@@ -51,9 +51,14 @@ resource "aws_iam_role_policy" "lambda_policy" {
         Effect   = "Allow",
         Action   = ["sqs:SendMessage"],
         Resource = var.check_balance_queue_arn
+      },
+       {
+        Effect   = "Allow",
+        Action   = [
+          "cloudwatch:PutMetricData" 
+        ],
+        Resource = "*"
       }
-    
-
     ]
   })
 }
