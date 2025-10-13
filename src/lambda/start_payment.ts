@@ -39,7 +39,6 @@ export const handler = async (event: any) => {
 
         const paymentItem = {
           traceId,
-          paymentId: message.paymentId || uuidv4(),
           userId: message.userId,
           cardId: message.cardId,
           service: message.service,
@@ -57,13 +56,11 @@ export const handler = async (event: any) => {
           traceId,
           step: "PAYMENT_INSERTED",
           table: PAYMENT_TABLE,
-          paymentId: paymentItem.paymentId,
           timestamp: new Date().toISOString(),
         }));
 
         const checkBalancePayload = {
           traceId, // 👈 ahora conserva el mismo
-          paymentId: paymentItem.paymentId,
           userId: paymentItem.userId,
           cardId: paymentItem.cardId,
           amount: paymentItem.amount,
