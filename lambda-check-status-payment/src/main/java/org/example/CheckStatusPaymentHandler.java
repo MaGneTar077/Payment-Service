@@ -26,13 +26,20 @@ public class CheckStatusPaymentHandler implements RequestHandler<APIGatewayProxy
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context) {
 
         APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
-        response.setHeaders(Map.of("Content-Type", "application/json"));
+
+        if ("OPTIONS".equalsIgnoreCase(request.getHttpMethod())) {
+            response.setStatusCode(200);
+            response.setHeaders(getCorsHeaders());
+            response.setBody("{}");
+            return response;
+        }
 
         try {
             String traceId = request.getPathParameters() != null ? request.getPathParameters().get("traceId") : null;
 
             if (traceId == null || traceId.isEmpty()) {
                 response.setStatusCode(400);
+                response.setHeaders(getCorsHeaders());
                 response.setBody("{\"error\":\"El parámetro traceId es obligatorio\"}");
                 return response;
             }
@@ -44,6 +51,7 @@ public class CheckStatusPaymentHandler implements RequestHandler<APIGatewayProxy
 
             if (item == null) {
                 response.setStatusCode(404);
+                response.setHeaders(getCorsHeaders());
                 response.setBody("{\"error\":\"No se encontró ningún pago con el traceId: " + traceId + "\"}");
                 return response;
             }
@@ -65,6 +73,16 @@ public class CheckStatusPaymentHandler implements RequestHandler<APIGatewayProxy
             response.setBody("{\"error\":\"Error consultando el estado del pago: " + e.getMessage() + "\"}");
         }
 
+        response.setHeaders(getCorsHeaders());
         return response;
+    }
+
+    private Map<String, String> getCorsHeaders() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Access-Control-Allow-Origin", "*");
+        headers.put("Access-Control-Allow-Methods", "OPTIONS,GET");
+        headers.put("Access-Control-Allow-Headers", "Content-Type,Authorization");
+        headers.put("Content-Type", "application/json");
+        return headers;
     }
 }
