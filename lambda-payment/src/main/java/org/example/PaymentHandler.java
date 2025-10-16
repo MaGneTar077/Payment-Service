@@ -30,6 +30,13 @@ public class PaymentHandler implements RequestHandler<APIGatewayProxyRequestEven
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context) {
         APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
 
+        if ("OPTIONS".equalsIgnoreCase(request.getHttpMethod())) {
+            response.setStatusCode(200);
+            response.setHeaders(getCorsHeaders());
+            response.setBody("{}");
+            return response;
+        }
+
         try {
             Map<String, Object> body = mapper.readValue(request.getBody(), Map.class);
             String cardId = (String) body.get("cardId");
@@ -62,14 +69,14 @@ public class PaymentHandler implements RequestHandler<APIGatewayProxyRequestEven
 
             response.setStatusCode(200);
             response.setBody(mapper.writeValueAsString(result));
-            return response;
-
         } catch (Exception e) {
             context.getLogger().log("❌ Error en PaymentHandler: " + e.getMessage());
             response.setStatusCode(500);
             response.setBody("{\"error\":\"Error procesando el pago: " + e.getMessage() + "\"}");
-            return response;
         }
+
+        response.setHeaders(getCorsHeaders());
+        return response;
     }
 
     private String getUserIdFromCardId(String cardId) {
@@ -90,5 +97,13 @@ public class PaymentHandler implements RequestHandler<APIGatewayProxyRequestEven
 
         Item item = iterator.next();
         return item.getString("userId");
+    }
+
+    private Map<String, String> getCorsHeaders() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Access-Control-Allow-Origin", "*");
+        headers.put("Access-Control-Allow-Methods", "OPTIONS,POST,GET");
+        headers.put("Access-Control-Allow-Headers", "Content-Type,Authorization");
+        return headers;
     }
 }
